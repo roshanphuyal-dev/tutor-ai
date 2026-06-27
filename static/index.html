@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tutor AI</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+  .app { display: flex; height: 100vh; }
+  .sidebar { width: 320px; min-width: 320px; background: #1e293b; padding: 20px; display: flex; flex-direction: column; border-right: 1px solid #334155; position: fixed; top: 0; left: 0; bottom: 0; overflow-y: auto; z-index: 10; }
+  .sidebar h1 { font-size: 1.5rem; margin-bottom: 20px; color: #38bdf8; }
+  .sidebar h2 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; margin: 16px 0 8px; }
+  .main { margin-left: 320px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+  .btn { background: #38bdf8; color: #0f172a; border: none; padding: 10px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.2s; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 6px; }
+  .btn:hover { background: #7dd3fc; }
+  .btn-secondary { background: #334155; color: #e2e8f0; }
+  .btn-secondary:hover { background: #475569; }
+  .btn-small { padding: 6px 12px; font-size: 0.8rem; }
+  .career-list { flex: 1; overflow-y: auto; margin: 8px 0 16px; }
+  .career-item { padding: 10px 12px; background: #0f172a; border-radius: 8px; margin-bottom: 4px; cursor: pointer; transition: all 0.2s; border: 1px solid #334155; position: relative; }
+  .career-item:hover { border-color: #38bdf8; background: #1e293b; }
+  .career-item.active { border-color: #38bdf8; background: #1e293b; }
+  .career-item .name { font-size: 0.9rem; font-weight: 500; }
+  .career-item .sub-count { font-size: 0.75rem; color: #64748b; }
+  .career-item .sub-tracks-dropdown { display: none; padding-top: 8px; margin-top: 8px; border-top: 1px solid #334155; }
+  .career-item:hover .sub-tracks-dropdown { display: block; }
+  .sub-track-entry { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; font-size: 0.85rem; transition: background 0.15s; }
+  .sub-track-entry:hover { background: #334155; }
+  .sub-track-entry.completed .st-name { color: #22c55e; font-weight: 500; }
+  .sub-track-entry .st-name { flex: 1; }
+  .sub-track-entry .st-bar { width: 60px; height: 6px; background: #334155; border-radius: 3px; overflow: hidden; }
+  .sub-track-entry .st-bar .fill { height: 100%; background: #38bdf8; border-radius: 3px; transition: width 0.3s; }
+  .sub-track-entry .st-pct { font-size: 0.75rem; color: #94a3b8; min-width: 30px; text-align: right; }
+  .welcome { flex: 1; display: flex; align-items: center; justify-content: center; text-align: center; padding: 40px; }
+  .welcome h2 { font-size: 2rem; margin-bottom: 12px; }
+  .welcome p { color: #94a3b8; max-width: 400px; line-height: 1.6; }
+  .track-view { flex: 1; display: none; flex-direction: column; }
+  .track-view.active { display: flex; }
+  .track-header { padding: 20px 24px; border-bottom: 1px solid #334155; }
+  .track-header h2 { font-size: 1.5rem; color: #38bdf8; }
+  .track-header .subtitle { color: #94a3b8; font-size: 0.9rem; margin-top: 4px; }
+  .track-content { flex: 1; overflow-y: auto; padding: 20px 24px; }
+  .sub-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+  .sub-card { background: #1e293b; border-radius: 10px; padding: 20px; border: 1px solid #334155; cursor: pointer; transition: all 0.2s; position: relative; display: flex; flex-direction: column; }
+  .sub-card:hover { border-color: #38bdf8; transform: translateY(-2px); }
+  .sub-card.completed { border-color: #22c55e; }
+  .sub-card.completed .sub-title { color: #22c55e; }
+  .sub-card .sub-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 8px; color: #e2e8f0; }
+  .sub-card .sub-desc { font-size: 0.85rem; color: #94a3b8; margin-bottom: 12px; }
+  .sub-card .progress-container { margin-top: auto; }
+  .sub-card .progress-bar { width: 100%; height: 8px; background: #334155; border-radius: 4px; overflow: hidden; }
+  .sub-card .progress-bar .fill { height: 100%; background: #38bdf8; border-radius: 4px; transition: width 0.5s; }
+  .sub-card.completed .progress-bar .fill { background: #22c55e; }
+  .sub-card .progress-label { display: flex; justify-content: space-between; font-size: 0.8rem; color: #94a3b8; margin-top: 6px; }
+  .sub-plan-view { flex: 1; display: none; flex-direction: column; }
+  .sub-plan-view.active { display: flex; }
+  .plan-header-bar { padding: 16px 24px; border-bottom: 1px solid #334155; display: flex; align-items: center; gap: 12px; }
+  .plan-header-bar .back { cursor: pointer; color: #94a3b8; font-size: 1.2rem; padding: 4px; }
+  .plan-header-bar .back:hover { color: #38bdf8; }
+  .plan-header-bar h2 { font-size: 1.3rem; color: #38bdf8; flex: 1; }
+  .tab-bar { display: flex; border-bottom: 1px solid #334155; }
+  .tab { padding: 12px 24px; cursor: pointer; color: #94a3b8; font-weight: 500; border-bottom: 2px solid transparent; transition: all 0.2s; }
+  .tab:hover { color: #e2e8f0; }
+  .tab.active { color: #38bdf8; border-bottom-color: #38bdf8; }
+  .plan-content { flex: 1; overflow-y: auto; padding: 20px 24px; }
+  .week-card { background: #1e293b; border-radius: 8px; padding: 16px; margin-bottom: 12px; border: 1px solid #334155; }
+  .week-card h3 { color: #38bdf8; margin-bottom: 8px; }
+  .week-card ul { list-style: none; }
+  .week-card li { padding: 4px 0; font-size: 0.9rem; }
+  .week-card li::before { content: "▸ "; color: #38bdf8; }
+  .session-area { flex: 1; display: none; flex-direction: column; }
+  .session-area.active { display: flex; }
+  .chat-messages { flex: 1; overflow-y: auto; padding: 20px 24px; }
+  .message { margin-bottom: 16px; max-width: 80%; }
+  .message.user { margin-left: auto; }
+  .message .bubble { padding: 12px 16px; border-radius: 12px; line-height: 1.5; }
+  .message.assistant .bubble { background: #1e293b; border: 1px solid #334155; }
+  .message.user .bubble { background: #38bdf8; color: #0f172a; }
+  .chat-input { display: flex; gap: 8px; padding: 16px 24px; border-top: 1px solid #334155; background: #1e293b; }
+  .chat-input input { flex: 1; padding: 12px 16px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #e2e8f0; font-size: 0.95rem; outline: none; }
+  .chat-input input:focus { border-color: #38bdf8; }
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 100; }
+  .modal-overlay.active { display: flex; }
+  .modal { background: #1e293b; border-radius: 12px; padding: 24px; width: 520px; max-width: 90vw; max-height: 80vh; overflow-y: auto; }
+  .modal h2 { margin-bottom: 16px; color: #38bdf8; }
+  .modal label { display: block; font-size: 0.85rem; color: #94a3b8; margin-bottom: 4px; margin-top: 12px; }
+  .modal input, .modal textarea { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #e2e8f0; font-size: 0.95rem; outline: none; }
+  .modal textarea { min-height: 60px; resize: vertical; }
+  .modal input:focus, .modal textarea:focus { border-color: #38bdf8; }
+  .modal .btn { margin-top: 16px; width: 100%; }
+  .modal .close { float: right; background: none; border: none; color: #94a3b8; font-size: 1.5rem; cursor: pointer; }
+  .modal .close:hover { color: #fff; }
+  .file-upload { border: 2px dashed #334155; border-radius: 8px; padding: 16px; text-align: center; cursor: pointer; transition: border-color 0.2s; margin-top: 8px; }
+  .file-upload:hover { border-color: #38bdf8; }
+  .file-upload.has-file { border-color: #22c55e; background: rgba(34,197,94,0.05); }
+  .file-upload input { display: none; }
+  .file-upload .hint { color: #64748b; font-size: 0.85rem; }
+  .file-upload .fname { color: #22c55e; font-size: 0.9rem; font-weight: 500; }
+  .qa-block { margin: 12px 0; }
+  .qa-item { margin-bottom: 12px; padding: 12px; background: #0f172a; border-radius: 8px; border: 1px solid #334155; }
+  .qa-item .q { font-size: 0.9rem; color: #e2e8f0; margin-bottom: 8px; }
+  .qa-item .q strong { color: #38bdf8; }
+  .qa-item textarea { margin-top: 4px; }
+  .loading { display: inline-block; width: 16px; height: 16px; border: 2px solid #38bdf8; border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <h1> Tutor AI</h1>
+    <button class="btn" onclick="showNewTrackModal()">+ New Career Track</button>
+    <h2>Your Career Tracks</h2>
+    <div class="career-list" id="careerList">
+      <p style="color:#64748b;font-size:0.85rem;">No tracks yet. Start your first career path!</p>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="welcome" id="welcome">
+      <div>
+        <h2>Welcome to Tutor AI</h2>
+        <p>Start by creating a career track. We'll build a personalized learning path with skills, milestones, and one-on-one tutoring.</p>
+        <button class="btn" onclick="showNewTrackModal()" style="margin-top:20px;">+ New Career Track</button>
+      </div>
+    </div>
+
+    <div class="track-view" id="trackView">
+      <div class="track-header" id="trackHeader"></div>
+      <div class="track-content" id="subTrackGrid"></div>
+    </div>
+
+    <div class="sub-plan-view" id="subPlanView">
+      <div class="plan-header-bar">
+        <span class="back" onclick="backToTrack()">&#8592;</span>
+        <h2 id="subPlanTitle">Sub-track</h2>
+        <div style="display:flex;gap:4px;">
+          <button class="btn btn-small btn-secondary" onclick="switchPlanTab('plan')" id="tabPlanBtn">Plan</button>
+          <button class="btn btn-small btn-secondary" onclick="switchPlanTab('session')" id="tabSessionBtn">Tutor</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+          <span style="font-size:0.8rem;color:#94a3b8;">Progress:</span>
+          <input type="range" min="0" max="100" value="0" id="progressSlider" oninput="updateProgress(this.value)" style="width:100px;accent-color:#38bdf8;">
+          <span id="progressLabel" style="font-size:0.85rem;color:#94a3b8;min-width:36px;">0%</span>
+        </div>
+      </div>
+      <div id="planContent" style="flex:1;overflow-y:auto;padding:20px 24px;"></div>
+      <div class="session-area" id="sessionArea">
+        <div class="chat-messages" id="chatMessages"></div>
+        <div class="chat-input">
+          <input type="text" id="chatInput" placeholder="Ask your tutor..." onkeydown="if(event.key==='Enter') sendMessage()">
+          <button class="btn" onclick="sendMessage()">Send</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="modal-overlay" id="newTrackModal">
+  <div class="modal">
+    <button class="close" onclick="hideModal('newTrackModal')">&times;</button>
+    <h2>New Career Track</h2>
+    <label>Career track name</label>
+    <input type="text" id="trackName" placeholder="e.g., Cybersecurity, Data Science, DevOps...">
+    <label>Additional resources (optional)</label>
+    <div class="file-upload" id="trackFileUpload" onclick="document.getElementById('trackFileInput').click()">
+      <input type="file" id="trackFileInput" accept=".pdf,.doc,.docx,.txt" onchange="handleTrackFile(event)">
+      <div class="hint" id="trackFileHint">Click to upload PDF, DOC, or TXT</div>
+    </div>
+    <button class="btn" onclick="startCareerTrack()">Next: Assessment Questions</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="questionsModal">
+  <div class="modal">
+    <button class="close" onclick="hideModal('questionsModal')">&times;</button>
+    <h2>Tell Us About Yourself</h2>
+    <p style="color:#94a3b8;font-size:0.9rem;margin-bottom:12px;">Answer these questions so we can tailor your learning path.</p>
+    <div id="qaContainer"></div>
+    <button class="btn" onclick="finalizeTrack()">Generate My Learning Path</button>
+  </div>
+</div>
+
+<script>
+let pendingTrackData = null;
+let currentTrackId = null;
+let currentSubId = null;
+let currentSessionId = null;
+
+function showNewTrackModal() {
+  document.getElementById('newTrackModal').classList.add('active');
+}
+
+function hideModal(id) {
+  document.getElementById(id).classList.remove('active');
+}
+
+function handleTrackFile(event) {
+  const file = event.target.files[0];
+  const upload = document.getElementById('trackFileUpload');
+  const hint = document.getElementById('trackFileHint');
+  if (file) {
+    upload.classList.add('has-file');
+    hint.className = 'fname';
+    hint.textContent = '\u2713 ' + file.name;
+  } else {
+    upload.classList.remove('has-file');
+    hint.className = 'hint';
+    hint.textContent = 'Click to upload PDF, DOC, or TXT';
+  }
+}
+
+async function startCareerTrack() {
+  const name = document.getElementById('trackName').value.trim();
+  if (!name) { alert('Please enter a career track name.'); return; }
+  const btn = document.querySelector('#newTrackModal .btn');
+  btn.innerHTML = '<span class="loading"></span> Generating questions...';
+  btn.disabled = true;
+  try {
+    const formData = new FormData();
+    formData.append('name', name);
+    const fileInput = document.getElementById('trackFileInput');
+    if (fileInput.files.length > 0) formData.append('file', fileInput.files[0]);
+    const res = await fetch('/api/career-tracks', { method: 'POST', body: formData });
+    const data = await res.json();
+    if (!res.ok) { alert('Error: ' + (data.detail || 'Failed')); return; }
+    pendingTrackData = data;
+    hideModal('newTrackModal');
+    showQuestionsModal(data.questions);
+  } catch (e) { alert('Error: ' + e.message); }
+  finally { btn.innerHTML = 'Next: Assessment Questions'; btn.disabled = false; }
+}
+
+function showQuestionsModal(questions) {
+  const container = document.getElementById('qaContainer');
+  container.innerHTML = questions.map((q, i) =>
+    `<div class="qa-item">
+      <div class="q"><strong>Q${i+1}:</strong> ${escaped(q)}</div>
+      <textarea id="qa_${i}" placeholder="Your answer..." rows="2"></textarea>
+    </div>`
+  ).join('');
+  document.getElementById('questionsModal').classList.add('active');
+}
+
+async function finalizeTrack() {
+  if (!pendingTrackData) return;
+  const questions = pendingTrackData.questions;
+  const answers = questions.map((_, i) => document.getElementById('qa_' + i).value.trim());
+  if (answers.some(a => !a)) { alert('Please answer all questions.'); return; }
+  const btn = document.querySelector('#questionsModal .btn');
+  btn.innerHTML = '<span class="loading"></span> Creating your path...';
+  btn.disabled = true;
+  try {
+    const formData = new FormData();
+    formData.append('track_name', pendingTrackData.name);
+    questions.forEach(q => formData.append('questions', q));
+    answers.forEach(a => formData.append('answers', a));
+    if (pendingTrackData.file_text) formData.append('file_text', pendingTrackData.file_text);
+    const res = await fetch('/api/career-tracks/' + encodeURIComponent(pendingTrackData.name) + '/finalize', { method: 'POST', body: formData });
+    const track = await res.json();
+    if (!res.ok) { alert('Error: ' + (track.detail || 'Failed')); return; }
+    hideModal('questionsModal');
+    pendingTrackData = null;
+    document.getElementById('trackName').value = '';
+    document.getElementById('trackFileInput').value = '';
+    document.getElementById('trackFileUpload').classList.remove('has-file');
+    document.getElementById('trackFileHint').className = 'hint';
+    document.getElementById('trackFileHint').textContent = 'Click to upload PDF, DOC, or TXT';
+    await loadCareerTracks();
+    showTrack(track.id);
+  } catch (e) { alert('Error: ' + e.message); }
+  finally { btn.innerHTML = 'Generate My Learning Path'; btn.disabled = false; }
+}
+
+async function loadCareerTracks() {
+  const res = await fetch('/api/career-tracks');
+  const tracks = await res.json();
+  const list = document.getElementById('careerList');
+  if (tracks.length === 0) {
+    list.innerHTML = '<p style="color:#64748b;font-size:0.85rem;">No tracks yet. Start your first career path!</p>';
+    return;
+  }
+  list.innerHTML = tracks.map(t =>
+    `<div class="career-item${t.id === currentTrackId ? ' active' : ''}" onclick="showTrack('${t.id}')">
+      <div class="name">${escaped(t.name)}</div>
+      <div class="sub-count">${t.sub_tracks.length} skills</div>
+      <div class="sub-tracks-dropdown">
+        ${t.sub_tracks.map(s =>
+          `<div class="sub-track-entry${s.completed ? ' completed' : ''}" onclick="event.stopPropagation();openSubTrack('${t.id}','${s.id}')">
+            <span class="st-name">${escaped(s.name)}</span>
+            <div class="st-bar"><div class="fill" style="width:${s.completion}%"></div></div>
+            <span class="st-pct">${s.completion}%</span>
+          </div>`
+        ).join('')}
+      </div>
+    </div>`
+  ).join('');
+}
+
+async function showTrack(trackId) {
+  currentTrackId = trackId;
+  currentSubId = null;
+  document.getElementById('welcome').style.display = 'none';
+  document.getElementById('trackView').classList.add('active');
+  document.getElementById('subPlanView').classList.remove('active');
+  const res = await fetch('/api/career-tracks/' + trackId);
+  const track = await res.json();
+  document.getElementById('trackHeader').innerHTML = `
+    <h2>${escaped(track.name)}</h2>
+    <div class="subtitle">${track.sub_tracks.length} skills to master</div>
+  `;
+  document.getElementById('subTrackGrid').innerHTML = `
+    <div class="sub-grid">
+      ${track.sub_tracks.map(s =>
+        `<div class="sub-card${s.completed ? ' completed' : ''}" onclick="openSubTrack('${track.id}','${s.id}')">
+          <div class="sub-title">${escaped(s.name)}</div>
+          ${s.description ? '<div class="sub-desc">' + escaped(s.description) + '</div>' : ''}
+          <div class="progress-container">
+            <div class="progress-bar"><div class="fill" style="width:${s.completion}%"></div></div>
+            <div class="progress-label"><span>${s.completion}% complete</span></div>
+          </div>
+        </div>`
+      ).join('')}
+    </div>
+  `;
+  await loadCareerTracks();
+}
+
+async function openSubTrack(trackId, subId) {
+  currentTrackId = trackId;
+  currentSubId = subId;
+  currentSessionId = null;
+  document.getElementById('trackView').classList.remove('active');
+  document.getElementById('subPlanView').classList.add('active');
+  document.getElementById('sessionArea').classList.remove('active');
+  document.getElementById('planContent').style.display = 'block';
+  document.getElementById('subPlanTitle').textContent = 'Loading...';
+
+  const res = await fetch('/api/career-tracks/' + trackId);
+  const track = await res.json();
+  const sub = track.sub_tracks.find(s => s.id === subId);
+  if (!sub) return;
+
+  document.getElementById('subPlanTitle').textContent = sub.name;
+  document.getElementById('progressSlider').value = sub.completion;
+  document.getElementById('progressLabel').textContent = sub.completion + '%';
+
+  const planRes = await fetch('/api/career-tracks/' + trackId + '/sub-tracks/' + subId + '/generate', { method: 'POST' });
+  const planData = await planRes.json();
+
+  if (planData.weeks && planData.weeks.length > 0) {
+    document.getElementById('planContent').innerHTML = (planData.summary ? '<p style="color:#94a3b8;margin-bottom:16px;">' + escaped(planData.summary) + '</p>' : '') +
+      planData.weeks.map(w =>
+        '<div class="week-card"><h3>Week ' + w.week + ': ' + escaped(w.topic) + '</h3><ul>' +
+        (w.objectives || []).map(o => '<li>' + escaped(o) + '</li>').join('') + '</ul>' +
+        (w.exercises && w.exercises.length ? '<p style="color:#94a3b8;margin-top:8px;font-size:0.85rem;">Exercises:</p><ul>' +
+          w.exercises.map(e => '<li>' + escaped(e) + '</li>').join('') + '</ul>' : '') +
+        '</div>'
+      ).join('');
+  } else {
+    document.getElementById('planContent').innerHTML = '<p style="color:#94a3b8;">Learning plan not yet available.</p>';
+  }
+  await loadCareerTracks();
+}
+
+function backToTrack() {
+  document.getElementById('subPlanView').classList.remove('active');
+  document.getElementById('trackView').classList.add('active');
+  if (currentTrackId) showTrack(currentTrackId);
+}
+
+async function updateProgress(val) {
+  document.getElementById('progressLabel').textContent = val + '%';
+  if (currentTrackId && currentSubId) {
+    const formData = new FormData();
+    formData.append('pct', val);
+    await fetch('/api/career-tracks/' + currentTrackId + '/sub-tracks/' + currentSubId + '/progress', { method: 'POST', body: formData });
+    await loadCareerTracks();
+  }
+}
+
+function switchPlanTab(tab) {
+  if (tab === 'plan') {
+    document.getElementById('planContent').style.display = 'block';
+    document.getElementById('sessionArea').classList.remove('active');
+    document.getElementById('tabPlanBtn').className = 'btn btn-small btn-primary';
+    document.getElementById('tabSessionBtn').className = 'btn btn-small btn-secondary';
+  } else {
+    document.getElementById('planContent').style.display = 'none';
+    document.getElementById('sessionArea').classList.add('active');
+    document.getElementById('tabSessionBtn').className = 'btn btn-small btn-primary';
+    document.getElementById('tabPlanBtn').className = 'btn btn-small btn-secondary';
+    if (!currentSessionId && currentSubId) startSession();
+  }
+}
+
+async function startSession() {
+  const res = await fetch('/api/sessions?plan_id=' + currentSubId, { method: 'POST' });
+  if (!res.ok) { alert('Failed to start session'); return; }
+  const session = await res.json();
+  currentSessionId = session.id;
+  renderMessages(session.messages);
+}
+
+async function sendMessage() {
+  const input = document.getElementById('chatInput');
+  const msg = input.value.trim();
+  if (!msg || !currentSessionId) return;
+  input.value = '';
+  const container = document.getElementById('chatMessages');
+  container.innerHTML += '<div class="message user"><div class="bubble">' + escaped(msg) + '</div></div>';
+  container.scrollTop = container.scrollHeight;
+  const res = await fetch('/api/sessions/' + currentSessionId + '/chat', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: msg }),
+  });
+  const data = await res.json();
+  if (res.ok) renderMessages(data.messages);
+}
+
+function renderMessages(messages) {
+  const container = document.getElementById('chatMessages');
+  container.innerHTML = messages.map(m =>
+    '<div class="message ' + m.role + '"><div class="bubble">' + marked(m.content) + '</div></div>'
+  ).join('');
+  container.scrollTop = container.scrollHeight;
+}
+
+function marked(text) {
+  return String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g,'<em>$1</em>')
+    .replace(/`(.+?)`/g,'<code style="background:#0f172a;padding:2px 6px;border-radius:4px;font-size:0.9em;">$1</code>')
+    .replace(/\n/g,'<br>');
+}
+
+function escaped(text) {
+  return String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+loadCareerTracks();
+</script>
+</body>
+</html>
