@@ -1,13 +1,13 @@
 # To run it
 
-cd tutor-ai\
+cd tutor-ai
 
-cp .env.example .env \
+cp .env.example .env 
 
 # Add your OpenAI API key here
-.venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000\
+.venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000
 
-Then open http://localhost:8000/static/ in your browser\
+Then open http://localhost:8000/static/ in your browser
 
 Features:
 - Create learning plans (Topic, goals, duration, level)
