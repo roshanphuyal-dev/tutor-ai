@@ -107,6 +107,56 @@
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+
+  /* --- Error Overlay (dev mode) --- */
+  .error-overlay { position: fixed; top: 0; right: 0; bottom: 0; width: 480px; background: #1e293b; border-left: 2px solid #ef4444; z-index: 200; transform: translateX(100%); transition: transform 0.3s ease; display: flex; flex-direction: column; box-shadow: -4px 0 20px rgba(0,0,0,0.5); }
+  .error-overlay.open { transform: translateX(0); }
+  .error-overlay-header { display: flex; align-items: center; padding: 14px 20px; border-bottom: 1px solid #334155; background: #0f172a; flex-shrink: 0; }
+  .error-overlay-header h3 { flex: 1; color: #ef4444; font-size: 0.95rem; font-weight: 600; }
+  .error-overlay-header .close-btn { background: none; border: none; color: #94a3b8; font-size: 1.4rem; cursor: pointer; line-height: 1; padding: 0 4px; }
+  .error-overlay-header .close-btn:hover { color: #fff; }
+  .error-overlay-body { flex: 1; overflow-y: auto; padding: 12px 16px; }
+  .error-overlay-body .empty { color: #64748b; font-size: 0.85rem; text-align: center; padding: 40px 0; }
+  .error-item { background: #0f172a; border: 1px solid #334155; border-left: 3px solid #ef4444; border-radius: 6px; padding: 12px; margin-bottom: 8px; }
+  .error-item .e-url { font-size: 0.75rem; color: #64748b; font-family: monospace; word-break: break-all; }
+  .error-item .e-status { display: inline-block; padding: 1px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; margin: 4px 0; }
+  .error-item .e-status.s4xx { background: rgba(239,68,68,0.15); color: #fca5a5; }
+  .error-item .e-status.s5xx { background: rgba(249,115,22,0.15); color: #fdba74; }
+  .error-item .e-status.s000 { background: rgba(148,163,184,0.15); color: #94a3b8; }
+  .error-item .e-msg { font-size: 0.85rem; color: #e2e8f0; margin-top: 4px; }
+  .error-overlay-toggle { position: fixed; bottom: 24px; right: 24px; z-index: 199; background: #ef4444; color: #fff; border: none; border-radius: 50%; width: 44px; height: 44px; font-size: 1.1rem; cursor: pointer; box-shadow: 0 2px 12px rgba(239,68,68,0.4); display: none; align-items: center; justify-content: center; }
+  .error-overlay-toggle.has-errors { display: flex; }
+  .error-overlay-toggle .badge { position: absolute; top: -4px; right: -4px; background: #fff; color: #ef4444; border-radius: 50%; width: 20px; height: 20px; font-size: 0.7rem; font-weight: 700; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 4px rgba(0,0,0,0.3); }
+
+  /* --- Deployment error indicator --- */
+  .deploy-indicator { position: fixed; bottom: 24px; right: 24px; z-index: 200; }
+  .deploy-indicator .trigger { width: 44px; height: 44px; border-radius: 50%; background: #1e293b; border: 1px solid #334155; cursor: pointer; display: none; align-items: center; justify-content: center; font-size: 1.1rem; color: #94a3b8; box-shadow: 0 2px 12px rgba(0,0,0,0.3); position: relative; transition: border-color 0.2s; }
+  .deploy-indicator .trigger:hover { border-color: #ef4444; }
+  .deploy-indicator .trigger.has-errors { display: flex; }
+  .deploy-indicator .trigger .dot { width: 10px; height: 10px; border-radius: 50%; background: #ef4444; position: absolute; top: 1px; right: 1px; border: 2px solid #1e293b; }
+  .deploy-indicator .panel { display: none; position: absolute; bottom: 52px; right: 0; width: 360px; background: #1e293b; border: 1px solid #334155; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); max-height: 400px; overflow-y: auto; }
+  .deploy-indicator .panel.open { display: block; }
+  .deploy-indicator .panel-hdr { padding: 12px 16px; border-bottom: 1px solid #334155; font-size: 0.85rem; color: #ef4444; font-weight: 600; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: #1e293b; }
+  .deploy-indicator .panel-hdr .close { background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 1.2rem; padding: 0; line-height: 1; }
+  .deploy-indicator .panel-hdr .close:hover { color: #fff; }
+  .deploy-indicator .panel-item { padding: 10px 16px; border-bottom: 1px solid #0f172a; }
+  .deploy-indicator .panel-item .p-url { color: #94a3b8; font-family: monospace; font-size: 0.7rem; word-break: break-all; }
+  .deploy-indicator .panel-item .p-msg { color: #e2e8f0; font-size: 0.8rem; margin-top: 2px; }
+  .deploy-indicator .panel-item .p-status { font-size: 0.7rem; color: #ef4444; }
+
+  /* --- Toast notifications --- */
+  .toast-container { position: fixed; top: 20px; right: 20px; z-index: 300; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+  .toast { pointer-events: auto; padding: 14px 16px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); min-width: 320px; max-width: 440px; animation: toastIn 0.35s ease; display: flex; align-items: flex-start; gap: 10px; }
+  .toast.closing { animation: toastOut 0.3s ease forwards; }
+  @keyframes toastIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  @keyframes toastOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+  .toast.error { background: #7f1d1d; border: 1px solid #ef4444; color: #fca5a5; }
+  .toast .ti { font-size: 1.2rem; line-height: 1.4; flex-shrink: 0; }
+  .toast .tc { flex: 1; }
+  .toast .tt { font-weight: 600; font-size: 0.9rem; }
+  .toast .tb { font-size: 0.82rem; opacity: 0.9; margin-top: 2px; }
+  .toast .t-close { background: none; border: none; color: inherit; cursor: pointer; opacity: 0.6; font-size: 1.1rem; padding: 0; line-height: 1; flex-shrink: 0; }
+  .toast .t-close:hover { opacity: 1; }
 </style>
 </head>
 <body>
@@ -185,11 +235,47 @@
   </div>
 </div>
 
+<!-- Error overlay (dev mode) -->
+<div class="error-overlay" id="errorOverlay">
+  <div class="error-overlay-header">
+    <h3>⚠️ Errors (<span id="errorCount">0</span>)</h3>
+    <button class="close-btn" onclick="toggleErrorOverlay()">&times;</button>
+  </div>
+  <div class="error-overlay-body" id="errorOverlayBody">
+    <div class="empty">No errors</div>
+  </div>
+</div>
+<button class="error-overlay-toggle" id="errorToggle" onclick="toggleErrorOverlay()">
+  ⚠️
+  <span class="badge" id="errorToggleBadge">0</span>
+</button>
+
+<!-- Deployment error indicator -->
+<div class="deploy-indicator" id="deployIndicator">
+  <div class="trigger" id="deployTrigger" onclick="toggleDeployPanel()">
+    ⚠️
+    <span class="dot"></span>
+  </div>
+  <div class="panel" id="deployPanel">
+    <div class="panel-hdr">
+      <span>Errors (<span id="deployErrorCount">0</span>)</span>
+      <button class="close" onclick="toggleDeployPanel()">&times;</button>
+    </div>
+    <div id="deployErrorList"></div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toastContainer"></div>
+
 <script>
 let pendingTrackData = null;
 let currentTrackId = null;
 let currentSubId = null;
 let currentSessionId = null;
+
+const AppConfig = { mode: 'dev', errors: [], rateLimited: false };
+let errorOverlayOpen = false;
 
 function showNewTrackModal() {
   document.getElementById('newTrackModal').classList.add('active');
@@ -225,9 +311,8 @@ async function startCareerTrack() {
     formData.append('name', name);
     const fileInput = document.getElementById('trackFileInput');
     if (fileInput.files.length > 0) formData.append('file', fileInput.files[0]);
-    const res = await fetch('/api/career-tracks', { method: 'POST', body: formData });
-    const data = await res.json();
-    if (!res.ok) { alert('Error: ' + (data.detail || 'Failed')); return; }
+    const data = await apiFetch('/api/career-tracks', { method: 'POST', body: formData });
+    if (!data) return;
     pendingTrackData = data;
     hideModal('newTrackModal');
     showQuestionsModal(data.questions);
@@ -260,9 +345,8 @@ async function finalizeTrack() {
     questions.forEach(q => formData.append('questions', q));
     answers.forEach(a => formData.append('answers', a));
     if (pendingTrackData.file_text) formData.append('file_text', pendingTrackData.file_text);
-    const res = await fetch('/api/career-tracks/' + encodeURIComponent(pendingTrackData.name) + '/finalize', { method: 'POST', body: formData });
-    const track = await res.json();
-    if (!res.ok) { alert('Error: ' + (track.detail || 'Failed')); return; }
+    const track = await apiFetch('/api/career-tracks/' + encodeURIComponent(pendingTrackData.name) + '/finalize', { method: 'POST', body: formData });
+    if (!track) return;
     hideModal('questionsModal');
     pendingTrackData = null;
     document.getElementById('trackName').value = '';
@@ -277,8 +361,8 @@ async function finalizeTrack() {
 }
 
 async function loadCareerTracks() {
-  const res = await fetch('/api/career-tracks');
-  const tracks = await res.json();
+  const tracks = await apiFetch('/api/career-tracks');
+  if (!tracks) return;
   const list = document.getElementById('careerList');
   if (tracks.length === 0) {
     list.innerHTML = '<p style="color:#64748b;font-size:0.85rem;">No tracks yet. Start your first career path!</p>';
@@ -307,8 +391,8 @@ async function showTrack(trackId) {
   document.getElementById('welcome').style.display = 'none';
   document.getElementById('trackView').classList.add('active');
   document.getElementById('subPlanView').classList.remove('active');
-  const res = await fetch('/api/career-tracks/' + trackId);
-  const track = await res.json();
+  const track = await apiFetch('/api/career-tracks/' + trackId);
+  if (!track) return;
   document.getElementById('trackHeader').innerHTML = `
     <h2>${escaped(track.name)}</h2>
     <div class="subtitle">${track.sub_tracks.length} skills to master</div>
@@ -340,8 +424,8 @@ async function openSubTrack(trackId, subId) {
   document.getElementById('planContent').style.display = 'block';
   document.getElementById('subPlanTitle').textContent = 'Loading...';
 
-  const res = await fetch('/api/career-tracks/' + trackId);
-  const track = await res.json();
+  const track = await apiFetch('/api/career-tracks/' + trackId);
+  if (!track) return;
   const sub = track.sub_tracks.find(s => s.id === subId);
   if (!sub) return;
 
@@ -349,10 +433,9 @@ async function openSubTrack(trackId, subId) {
   document.getElementById('progressSlider').value = sub.completion;
   document.getElementById('progressLabel').textContent = sub.completion + '%';
 
-  const planRes = await fetch('/api/career-tracks/' + trackId + '/sub-tracks/' + subId + '/generate', { method: 'POST' });
-  const planData = await planRes.json();
+  const planData = await apiFetch('/api/career-tracks/' + trackId + '/sub-tracks/' + subId + '/generate', { method: 'POST' });
 
-  if (planData.weeks && planData.weeks.length > 0) {
+  if (planData && planData.weeks && planData.weeks.length > 0) {
     document.getElementById('planContent').innerHTML = (planData.summary ? '<p style="color:#94a3b8;margin-bottom:16px;">' + escaped(planData.summary) + '</p>' : '') +
       planData.weeks.map(w =>
         '<div class="week-card"><h3>Week ' + w.week + ': ' + escaped(w.topic) + '</h3><ul>' +
@@ -378,7 +461,7 @@ async function updateProgress(val) {
   if (currentTrackId && currentSubId) {
     const formData = new FormData();
     formData.append('pct', val);
-    await fetch('/api/career-tracks/' + currentTrackId + '/sub-tracks/' + currentSubId + '/progress', { method: 'POST', body: formData });
+    await apiFetch('/api/career-tracks/' + currentTrackId + '/sub-tracks/' + currentSubId + '/progress', { method: 'POST', body: formData });
     await loadCareerTracks();
   }
 }
@@ -399,9 +482,8 @@ function switchPlanTab(tab) {
 }
 
 async function startSession() {
-  const res = await fetch('/api/sessions?plan_id=' + currentSubId, { method: 'POST' });
-  if (!res.ok) { alert('Failed to start session'); return; }
-  const session = await res.json();
+  const session = await apiFetch('/api/sessions?plan_id=' + currentSubId, { method: 'POST' });
+  if (!session) return;
   currentSessionId = session.id;
   renderMessages(session.messages);
 }
@@ -414,12 +496,11 @@ async function sendMessage() {
   const container = document.getElementById('chatMessages');
   container.innerHTML += '<div class="message user"><div class="bubble">' + escaped(msg) + '</div></div>';
   container.scrollTop = container.scrollHeight;
-  const res = await fetch('/api/sessions/' + currentSessionId + '/chat', {
+  const data = await apiFetch('/api/sessions/' + currentSessionId + '/chat', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ message: msg }),
   });
-  const data = await res.json();
-  if (res.ok) renderMessages(data.messages);
+  if (data) renderMessages(data.messages);
 }
 
 function renderMessages(messages) {
@@ -442,6 +523,157 @@ function escaped(text) {
   return String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
+// ─── Config & Error Handling ─────────────────────────────────────
+
+async function loadConfig() {
+  try {
+    const res = await fetch('/api/config');
+    const cfg = await res.json();
+    AppConfig.mode = cfg.mode || 'dev';
+    if (cfg.rate_limit && cfg.rate_limit.locked) {
+      AppConfig.rateLimited = true;
+      showRateLimitToast(cfg.rate_limit.retry_after_seconds);
+    }
+  } catch (e) {
+    AppConfig.mode = 'dev';
+  }
+  applyMode();
+}
+
+function applyMode() {
+  document.getElementById('errorOverlay').style.display = AppConfig.mode === 'dev' ? 'flex' : 'none';
+  document.getElementById('errorToggle').style.display = 'none';
+  document.getElementById('deployIndicator').style.display = AppConfig.mode === 'deployment' ? 'block' : 'none';
+}
+
+function addError(url, status, message, method) {
+  if (AppConfig.mode === 'production') return;
+  const err = { url, status, message, method: method || 'GET', time: new Date().toISOString() };
+  AppConfig.errors.push(err);
+  if (AppConfig.errors.length > 50) AppConfig.errors.shift();
+
+  if (AppConfig.mode === 'dev') { renderDevErrors(); if (!errorOverlayOpen) document.getElementById('errorToggle').classList.add('has-errors'); }
+  else if (AppConfig.mode === 'deployment') renderDeployErrors();
+}
+
+function renderDevErrors() {
+  const body = document.getElementById('errorOverlayBody');
+  const list = AppConfig.errors;
+  document.getElementById('errorCount').textContent = list.length;
+  document.getElementById('errorToggleBadge').textContent = list.length;
+  document.getElementById('errorToggle').classList.toggle('has-errors', list.length > 0);
+
+  if (list.length === 0) {
+    body.innerHTML = '<div class="empty">No errors</div>';
+    return;
+  }
+  body.innerHTML = list.map(e => {
+    const sc = e.status >= 400 && e.status < 500 ? 's4xx' : e.status >= 500 ? 's5xx' : 's000';
+    return `<div class="error-item">
+      <div class="e-url">${escaped(e.method || 'GET')} ${escaped(e.url)}</div>
+      <div class="e-status ${sc}">${e.status}</div>
+      <div class="e-msg">${escaped(e.message)}</div>
+    </div>`;
+  }).join('');
+}
+
+function toggleErrorOverlay() {
+  errorOverlayOpen = !errorOverlayOpen;
+  document.getElementById('errorOverlay').classList.toggle('open', errorOverlayOpen);
+}
+
+function renderDeployErrors() {
+  const list = AppConfig.errors;
+  document.getElementById('deployErrorCount').textContent = list.length;
+  document.getElementById('deployTrigger').classList.toggle('has-errors', list.length > 0);
+  const el = document.getElementById('deployErrorList');
+  if (list.length === 0) {
+    el.innerHTML = '<div style="padding:20px;text-align:center;color:#64748b;font-size:0.8rem;">No errors</div>';
+    return;
+  }
+  el.innerHTML = list.map(e =>
+    `<div class="panel-item">
+      <div class="p-url">${escaped(e.url)}</div>
+      <div class="p-status">${e.status}</div>
+      <div class="p-msg">${escaped(e.message)}</div>
+    </div>`
+  ).join('');
+}
+
+function toggleDeployPanel() {
+  document.getElementById('deployPanel').classList.toggle('open');
+}
+
+// ─── Toast System ────────────────────────────────────────────────
+
+function showToast(title, body, type, duration) {
+  const container = document.getElementById('toastContainer');
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.innerHTML =
+    `<div class="ti">${type === 'error' ? '❌' : '⚠️'}</div>` +
+    `<div class="tc"><div class="tt">${escaped(title)}</div><div class="tb">${escaped(body)}</div></div>` +
+    `<button class="t-close" onclick="dismissToast(this.parentElement)">&times;</button>`;
+  container.appendChild(el);
+  if (duration > 0) setTimeout(() => dismissToast(el), duration);
+}
+
+function dismissToast(el) {
+  if (el.classList.contains('closing')) return;
+  el.classList.add('closing');
+  setTimeout(() => el.remove(), 300);
+}
+
+function showRateLimitToast(retryAfter) {
+  if (AppConfig.rateLimited) return;
+  AppConfig.rateLimited = true;
+
+  const totalSec = Math.round(retryAfter);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  let waitStr = '';
+  if (h > 0) waitStr += `${h}h `;
+  if (m > 0) waitStr += `${m}m `;
+  waitStr += `${s}s`;
+
+  showToast(
+    'Token Exhausted',
+    `Rate limit reached. Please wait approximately ${waitStr} for the token to refresh.`,
+    'error',
+    totalSec * 1000 + 5000
+  );
+
+  // Clear rate-limited flag when the wait is over
+  setTimeout(() => { AppConfig.rateLimited = false; }, retryAfter * 1000);
+}
+
+// ─── API Fetch Wrapper ───────────────────────────────────────────
+
+async function apiFetch(url, options = {}) {
+  try {
+    const res = await fetch(url, options);
+    let data;
+    try { data = await res.json(); } catch (_) { data = null; }
+
+    if (data && data.error === 'rate_limited') {
+      showRateLimitToast(data.retry_after);
+      return null;
+    }
+
+    if (!res.ok) {
+      addError(url, res.status, (data && data.detail) || res.statusText, options.method || 'GET');
+      return null;
+    }
+
+    return data;
+  } catch (e) {
+    addError(url, 0, e.message, options.method || 'GET');
+    return null;
+  }
+}
+
+loadConfig();
 loadCareerTracks();
 </script>
 </body>

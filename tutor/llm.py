@@ -1,6 +1,7 @@
 import os
 import json
 import re
+import time
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -8,6 +9,35 @@ load_dotenv()
 API_KEY = os.getenv("OPENAI_API_KEY")
 BASE_URL = os.getenv("OPENAI_BASE_URL")
 MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+
+_rate_limited_until = 0.0
+
+
+class RateLimitExceeded(Exception):
+    def __init__(self, retry_after: float):
+        self.retry_after = retry_after
+        super().__init__(f"Rate limit exceeded. Retry after {retry_after:.0f}s")
+
+
+def get_rate_limit_status():
+    remaining = _rate_limited_until - time.time()
+    return {"locked": remaining > 0, "retry_after_seconds": max(0, remaining)}
+
+
+def _parse_retry_delay(error_body: dict) -> float:
+    try:
+        details = error_body.get("error", {}).get("details", [])
+        for detail in details:
+            if detail.get("@type", "").endswith("RetryInfo"):
+                raw = detail.get("retryDelay", "0s")
+                m = re.match(r"(\d+(?:\.\d+)?)\s*([smhd])", raw)
+                if m:
+                    v, unit = float(m.group(1)), m.group(2)
+                    return v * {"s": 1, "m": 60, "h": 3600, "d": 86400}.get(unit, 1)
+    except Exception:
+        pass
+    return 60.0
+
 
 SYSTEM_PROMPTS = {
     "planner": (
@@ -34,6 +64,11 @@ def chat(messages, system_prompt_key="tutor", temperature=0.7):
     if not API_KEY:
         return _mock_reply(messages, system_prompt_key)
 
+    global _rate_limited_until
+    now = time.time()
+    if now < _rate_limited_until:
+        raise RateLimitExceeded(_rate_limited_until - now)
+
     import openai
 
     client_kwargs = {"api_key": API_KEY}
@@ -49,6 +84,27 @@ def chat(messages, system_prompt_key="tutor", temperature=0.7):
             temperature=temperature,
         )
         return response.choices[0].message.content
+    except openai.RateLimitError as e:
+        retry_after = 60.0
+        raw_body = getattr(e, "body", None)
+        try:
+            body = raw_body or (
+                e.response.json() if hasattr(e, "response") and e.response else {}
+            )
+            if isinstance(body, list) and len(body) > 0:
+                body = body[0]
+            if isinstance(body, dict):
+                retry_after = _parse_retry_delay(body)
+        except Exception:
+            pass
+
+        if retry_after == 60.0 and hasattr(e, "message"):
+            m = re.search(r"retry in ([\d.]+)s", str(e.message), re.I)
+            if m:
+                retry_after = float(m.group(1))
+
+        _rate_limited_until = time.time() + max(retry_after, 10)
+        raise RateLimitExceeded(retry_after) from e
     except openai.AuthenticationError as e:
         hint = ""
         if not BASE_URL and not API_KEY.startswith("sk-"):
@@ -59,6 +115,14 @@ def chat(messages, system_prompt_key="tutor", temperature=0.7):
                 "  OPENAI_MODEL=gemini-2.0-flash"
             )
         return _mock_reply(messages, system_prompt_key, error_msg=str(e) + hint)
+    except openai.APIError as e:
+        err_str = str(e)
+        m = re.search(r"retry in ([\d.]+)s", err_str, re.I)
+        if m:
+            retry_after = float(m.group(1))
+            _rate_limited_until = time.time() + retry_after
+            raise RateLimitExceeded(retry_after) from e
+        return _mock_reply(messages, system_prompt_key, error_msg=err_str)
     except Exception as e:
         return _mock_reply(messages, system_prompt_key, error_msg=str(e))
 

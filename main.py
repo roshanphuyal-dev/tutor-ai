@@ -1,4 +1,5 @@
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+import os
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Request
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -12,6 +13,9 @@ from tutor.career import (
     get_track,
     list_tracks,
 )
+from tutor.llm import RateLimitExceeded, get_rate_limit_status
+
+APP_MODE = os.getenv("APP_MODE", "dev")
 
 app = FastAPI(title="Tutor AI")
 
@@ -22,12 +26,28 @@ class MessageRequest(BaseModel):
     message: str
 
 
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    return JSONResponse(
+        status_code=429,
+        content={"error": "rate_limited", "retry_after": exc.retry_after},
+    )
+
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):
     return JSONResponse(
         status_code=500,
         content={"detail": str(exc) if str(exc) else "Internal server error"},
     )
+
+
+@app.get("/api/config")
+def get_config():
+    return {
+        "mode": APP_MODE,
+        "rate_limit": get_rate_limit_status(),
+    }
 
 
 # --- Career Track Endpoints ---
@@ -50,6 +70,8 @@ async def create_career_track(
             file_text = extract_file_text(file.filename, content)
     try:
         questions = generate_questions(name, file_text)
+    except RateLimitExceeded:
+        raise
     except Exception as e:
         raise HTTPException(500, str(e))
     return {"name": name, "questions": questions, "file_text": file_text}
@@ -64,6 +86,8 @@ def finalize_career_track(
 ):
     try:
         track = create_track(track_name, questions, answers, file_text)
+    except RateLimitExceeded:
+        raise
     except Exception as e:
         raise HTTPException(500, str(e))
     if not track:
@@ -123,6 +147,8 @@ def get_session_endpoint(session_id: str):
 def chat_endpoint(session_id: str, req: MessageRequest):
     try:
         result = send_message(session_id, req.message)
+    except RateLimitExceeded:
+        raise
     except Exception as e:
         raise HTTPException(500, str(e))
     if not result:
